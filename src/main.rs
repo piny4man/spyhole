@@ -1,5 +1,6 @@
 use axum::{routing::post, Json, Router};
 use serde::Deserialize;
+use std::env;
 use tokio::time::{sleep, Duration};
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
@@ -53,6 +54,8 @@ async fn main() {
         .route("/monitor", post(monitor_service))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let port = env::var("APP_PORT").unwrap_or_else(|_| "3000".to_string());
+    let addr = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
