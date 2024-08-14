@@ -1,6 +1,10 @@
-use axum::{routing::post, Json, Router};
-use serde::Deserialize;
-use std::env;
+use axum::{response::IntoResponse, routing::post, Extension, Json, Router};
+use chrono::{NaiveDate, Utc};
+use reqwest::Error;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::{env, sync::Arc};
 use tokio::time::{sleep, Duration};
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
@@ -12,17 +16,64 @@ struct MonitorRequest {
     webhook: String,
 }
 
-async fn monitor_service(Json(request): Json<MonitorRequest>) -> &'static str {
+#[derive(Serialize)]
+struct MonitorResponse {
+    id: i32,
+    url: String,
+    webhook: String,
+    last_checked: Option<NaiveDate>,
+    status: Option<bool>,
+}
+
+async fn monitor_service(
+    Json(request): Json<MonitorRequest>,
+    Extension(pool): Extension<Arc<PgPool>>,
+) -> Json<MonitorResponse> {
+    let result = sqlx::query!(
+        "INSERT INTO monitored_urls (url, webhook) VALUES ($1, $2) RETURNING id, url, webhook, last_checked, status",
+        request.url,
+        request.webhook
+    )
+    .fetch_one(pool.as_ref())
+    .await
+    .expect("Failed to insert URL");
+
+    let id = result.id;
+    let url = result.url.clone();
+    let webhook = result.webhook.clone();
+
+    let pool_clone = Arc::clone(&pool);
+
     tokio::spawn(async move {
         loop {
-            if !ping_service(&request.url).await {
-                send_webhook_notification(&request.webhook, &request.url).await;
+            let status = ping_service(&url).await;
+            let current_date = Utc::now().date_naive();
+
+            sqlx::query!(
+                "UPDATE monitored_urls SET last_checked = $1, status = $2 WHERE id = $3",
+                current_date,
+                status,
+                id
+            )
+            .execute(pool_clone.as_ref())
+            .await
+            .expect("Failed to update URL");
+
+            if !status {
+                send_webhook_notification(&webhook, &url).await;
             }
-            sleep(Duration::from_secs(300)).await; // Check every 5 minutes
+            sleep(Duration::from_secs(900)).await; // Check every 15 minutes
         }
     });
-    info!("Monitor started");
-    "Monitor started"
+    info!("Monitor for {} started", &result.url.clone());
+
+    Json(MonitorResponse {
+        id,
+        url: result.url,
+        webhook: result.webhook,
+        last_checked: result.last_checked,
+        status: result.status,
+    })
 }
 
 async fn ping_service(url: &str) -> bool {
@@ -50,9 +101,17 @@ async fn main() {
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await
+        .expect("Failed to create pool");
+
     let app = Router::new()
         .route("/monitor", post(monitor_service))
-        .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()));
+        .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
+        .with_state(pool);
 
     let port = env::var("APP_PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = format!("0.0.0.0:{}", port);
