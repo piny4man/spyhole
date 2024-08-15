@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spyhole</title>
+  <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+</head>
+
+<body>
+  <main>
+    <header>
+      hello from SPYHOLE
+    </header>
+    <article>
+      <div id="list-container"></div>
+      <button hx-get="/monitored_urls" hx-target="#list-container" hx-swap="innerHTML">
+        Load List
+      </button>
+    </article>
+  </main>
+</body>
+
+</html>

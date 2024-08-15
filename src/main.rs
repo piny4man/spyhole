@@ -1,11 +1,16 @@
-use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
+use axum::{
+    extract::State,
+    response::IntoResponse,
+    routing::{get, post},
+    Json, Router,
+};
 use chrono::{NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::env;
 use tokio::time::{sleep, Duration};
 use tower::ServiceBuilder;
-use tower_http::trace::TraceLayer;
+use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::{info, Level};
 
 #[derive(Deserialize)]
@@ -89,6 +94,18 @@ async fn send_webhook_notification(webhook_url: &str, service_url: &str) {
     let _ = client.post(webhook_url).json(&payload).send().await;
 }
 
+async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
+    let monitored_urls = sqlx::query_as!(
+        MonitorResponse,
+        "SELECT id, url, webhook, last_checked, status FROM monitored_urls"
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("Failed to fetch monitored URLs");
+
+    Json(monitored_urls)
+}
+
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
@@ -108,6 +125,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/monitor", post(monitor_service))
+        .route("/monitored_urls", get(get_monitored_urls))
+        .nest_service("/", ServeDir::new("static"))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .with_state(pool);
 
