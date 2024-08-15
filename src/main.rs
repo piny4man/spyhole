@@ -1,10 +1,8 @@
-use axum::{response::IntoResponse, routing::post, Extension, Json, Router};
+use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use chrono::{NaiveDate, Utc};
-use reqwest::Error;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use sqlx::{postgres::PgPoolOptions, PgPool};
-use std::{env, sync::Arc};
+use std::env;
 use tokio::time::{sleep, Duration};
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
@@ -26,23 +24,21 @@ struct MonitorResponse {
 }
 
 async fn monitor_service(
+    State(pool): State<PgPool>,
     Json(request): Json<MonitorRequest>,
-    Extension(pool): Extension<Arc<PgPool>>,
-) -> Json<MonitorResponse> {
+) -> impl IntoResponse {
     let result = sqlx::query!(
         "INSERT INTO monitored_urls (url, webhook) VALUES ($1, $2) RETURNING id, url, webhook, last_checked, status",
         request.url,
         request.webhook
     )
-    .fetch_one(pool.as_ref())
+    .fetch_one(&pool)
     .await
     .expect("Failed to insert URL");
 
     let id = result.id;
     let url = result.url.clone();
     let webhook = result.webhook.clone();
-
-    let pool_clone = Arc::clone(&pool);
 
     tokio::spawn(async move {
         loop {
@@ -55,7 +51,7 @@ async fn monitor_service(
                 status,
                 id
             )
-            .execute(pool_clone.as_ref())
+            .execute(&pool)
             .await
             .expect("Failed to update URL");
 
@@ -95,6 +91,8 @@ async fn send_webhook_notification(webhook_url: &str, service_url: &str) {
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().ok();
+
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
         .with_max_level(Level::TRACE)
         .finish();
