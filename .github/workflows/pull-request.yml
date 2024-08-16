@@ -8,6 +8,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_LOG: ${{ secrets.RUST_LOG}}
+  APP_PORT: ${{ secrets.APP_PORT}}
+  DATABASE_URL: ${{ secrets.DATABASE_URL}}
 
 jobs:
   build:
