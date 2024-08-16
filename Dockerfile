@@ -19,7 +19,9 @@ ENV RUST_LOG=$RUST_LOG
 ENV APP_PORT=$APP_PORT
 ENV DATABASE_URL=$DATABASE_URL
 
-RUN echo $DATABASE_URL
+RUN echo "RUST_LOG: $RUST_LOG"
+RUN echo "APP_PORT: $APP_PORT"
+RUN echo "DATABASE_URL: $DATABASE_URL"
 RUN cargo build --release
 
 FROM debian:bookworm-slim AS runtime
