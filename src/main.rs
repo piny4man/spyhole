@@ -28,23 +28,8 @@ struct MonitorResponse {
     status: Option<bool>,
 }
 
-async fn monitor_service(
-    State(pool): State<PgPool>,
-    Json(request): Json<MonitorRequest>,
-) -> impl IntoResponse {
-    let result = sqlx::query!(
-        "INSERT INTO monitored_urls (url, webhook) VALUES ($1, $2) RETURNING id, url, webhook, last_checked, status",
-        request.url,
-        request.webhook
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("Failed to insert URL");
-
-    let id = result.id;
-    let url = result.url.clone();
-    let webhook = result.webhook.clone();
-
+async fn start_monitoring(pool: PgPool, id: i32, url: String, webhook: String) {
+    let monitored_url = url.clone();
     tokio::spawn(async move {
         loop {
             let status = ping_service(&url).await;
@@ -66,7 +51,27 @@ async fn monitor_service(
             sleep(Duration::from_secs(900)).await; // Check every 15 minutes
         }
     });
-    info!("Monitor for {} started", &result.url.clone());
+    info!("Monitor for {} started", monitored_url);
+}
+
+async fn monitor_service(
+    State(pool): State<PgPool>,
+    Json(request): Json<MonitorRequest>,
+) -> impl IntoResponse {
+    let result = sqlx::query!(
+        "INSERT INTO monitored_urls (url, webhook) VALUES ($1, $2) RETURNING id, url, webhook, last_checked, status",
+        request.url,
+        request.webhook
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Failed to insert URL");
+
+    let id = result.id;
+    let url = result.url.clone();
+    let webhook = result.webhook.clone();
+
+    start_monitoring(pool.clone(), result.id, url, webhook).await;
 
     Json(MonitorResponse {
         id,
@@ -103,7 +108,17 @@ async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
     .await
     .expect("Failed to fetch monitored URLs");
 
-    Json(monitored_urls)
+    let mut response_html = String::new();
+    for url in monitored_urls {
+        response_html.push_str(&format!(
+            "<li>ID: {} - URL: {} - Status: {}</li>",
+            url.id,
+            url.url,
+            url.status.unwrap_or(false)
+        ));
+    }
+
+    response_html.into_response()
 }
 
 #[tokio::main]
@@ -123,6 +138,15 @@ async fn main() {
         .await
         .expect("Failed to create pool");
 
+    let active_monitored_urls = sqlx::query!("SELECT id, url, webhook FROM monitored_urls")
+        .fetch_all(&pool)
+        .await
+        .expect("Failed to fetch monitored URLs");
+
+    for url in active_monitored_urls {
+        start_monitoring(pool.clone(), url.id, url.url, url.webhook).await;
+    }
+
     let app = Router::new()
         .route("/monitor", post(monitor_service))
         .route("/monitored_urls", get(get_monitored_urls))
@@ -130,7 +154,7 @@ async fn main() {
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .with_state(pool);
 
-    let port = env::var("APP_PORT").unwrap_or_else(|_| "3000".to_string());
+    let port = env::var("APP_PORT").unwrap_or_else(|_| "5000".to_string());
     let addr = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();

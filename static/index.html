@@ -11,12 +11,12 @@
 <body>
   <main>
     <header>
-      hello from SPYHOLE
+      SPYHOLE - Simple down detector
     </header>
     <article>
-      <div id="list-container"></div>
+      <ul id="list-container" hx-get="/monitored_urls" hx-trigger="load" hx-swap="innerHTML"></ul>
       <button hx-get="/monitored_urls" hx-target="#list-container" hx-swap="innerHTML">
-        Load List
+        Refresh List
       </button>
     </article>
   </main>
