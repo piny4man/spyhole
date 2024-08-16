@@ -8,7 +8,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 FROM chef AS builder
 ARG RUST_LOG
 ARG APP_PORT
-ARG DATABASE_URL
+ARG DATABASE_PUBLIC_URL
 
 COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies - this is the caching Docker layer!
@@ -17,11 +17,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 ENV RUST_LOG=$RUST_LOG
 ENV APP_PORT=$APP_PORT
-ENV DATABASE_URL=$DATABASE_URL
-
-RUN echo "RUST_LOG: $RUST_LOG"
-RUN echo "APP_PORT: $APP_PORT"
-RUN echo "DATABASE_URL: $DATABASE_URL"
+ENV DATABASE_URL=$DATABASE_PUBLIC_URL
 RUN cargo build --release
 
 FROM debian:bookworm-slim AS runtime
