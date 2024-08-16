@@ -14,13 +14,15 @@ COPY . .
 RUN cargo build --release
 
 FROM debian:bookworm-slim AS runtime
+ARG RAILWAY_ENVIRONMENT
+
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=builder /app/target/release/spyhole /usr/local/bin/spyhole
 
 ENV RUST_LOG=info
 ENV APP_PORT=8080
-ENV DATABASE_URL=${{ DATABASE_URL }}
+ENV DATABASE_URL=${{Postgres.DATABASE_URL}}
 
 EXPOSE 8080
 ENTRYPOINT ["spyhole"]
