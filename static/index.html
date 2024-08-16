@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spyhole</title>
+  <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+</head>
+
+<body>
+  <main>
+    <header>
+      SPYHOLE - Simple down detector
+    </header>
+    <article>
+      <ul id="list-container" hx-get="/monitored_urls" hx-trigger="load" hx-swap="innerHTML"></ul>
+      <button hx-get="/monitored_urls" hx-target="#list-container" hx-swap="innerHTML">
+        Refresh List
+      </button>
+    </article>
+  </main>
+</body>
+
+</html>
