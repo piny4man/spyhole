@@ -10,7 +10,7 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::env;
 use tokio::time::{sleep, Duration};
 use tower::ServiceBuilder;
-use tower_http::{services::ServeDir, trace::TraceLayer};
+use tower_http::{services::ServeFile, trace::TraceLayer};
 use tracing::{info, Level};
 
 #[derive(Deserialize)]
@@ -147,13 +147,10 @@ async fn main() {
         start_monitoring(pool.clone(), url.id, url.url, url.webhook).await;
     }
 
-    let serve_static = ServeDir::new("static");
-
     let app = Router::new()
         .route("/monitor", post(monitor_service))
         .route("/monitored_urls", get(get_monitored_urls))
-        .nest_service("/", serve_static.clone())
-        .fallback_service(serve_static)
+        .nest_service("/", ServeFile::new("static/index.html"))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .with_state(pool);
 
