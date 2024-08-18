@@ -1,6 +1,6 @@
 use axum::{
     extract::State,
-    response::IntoResponse,
+    response::{Html, IntoResponse},
     routing::{get, post},
     Json, Router,
 };
@@ -121,6 +121,10 @@ async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
     response_html.into_response()
 }
 
+async fn index() -> Html<&'static str> {
+    Html(include_str!("../static/index.html"))
+}
+
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
@@ -148,9 +152,10 @@ async fn main() {
     }
 
     let app = Router::new()
+        .route("/", get(index))
+        .nest_service("/assets", ServeDir::new("./static/assets"))
         .route("/monitor", post(monitor_service))
         .route("/monitored_urls", get(get_monitored_urls))
-        .nest_service("/", ServeDir::new("static"))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .with_state(pool);
 
