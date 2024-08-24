@@ -111,8 +111,7 @@ async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
     let mut response_html = String::new();
     for url in monitored_urls {
         response_html.push_str(&format!(
-            "<li>ID: {} - URL: {} - Status: {}</li>",
-            url.id,
+            "<li class=\"monitored-url\"><a href=\"{0}\" target=\"_blank\" rel=\"noreferrer\">{0}</a><span class=\"status-badge up-{1}\"/></li>",
             url.url,
             url.status.unwrap_or(false)
         ));
