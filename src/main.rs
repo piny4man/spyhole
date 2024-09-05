@@ -1,6 +1,6 @@
 use axum::{
     extract::State,
-    response::{Html, IntoResponse},
+    response::IntoResponse},
     routing::{get, post},
     Json, Router,
 };
@@ -129,7 +129,7 @@ async fn main() {
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
@@ -152,7 +152,7 @@ async fn main() {
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .with_state(pool);
 
-    let port = env::var("APP_PORT").unwrap_or_else(|_| "5000".to_string());
+    let port = std::env::var("APP_PORT").unwrap_or_else(|_| "5000".to_string());
     let addr = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
