@@ -1,13 +1,12 @@
 use axum::{
     extract::State,
-    response::{Html, IntoResponse},
+    response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
 use chrono::{NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
-use std::env;
 use tokio::time::{sleep, Duration};
 use tower::ServiceBuilder;
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -120,10 +119,6 @@ async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
     response_html.into_response()
 }
 
-async fn index() -> Html<&'static str> {
-    Html(include_str!("../static/index.html"))
-}
-
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
@@ -134,7 +129,7 @@ async fn main() {
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
@@ -151,14 +146,13 @@ async fn main() {
     }
 
     let app = Router::new()
-        .route("/", get(index))
-        .nest_service("/assets", ServeDir::new("./static/assets"))
+        .nest_service("/", ServeDir::new("static"))
         .route("/monitor", post(monitor_service))
         .route("/monitored_urls", get(get_monitored_urls))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .with_state(pool);
 
-    let port = env::var("APP_PORT").unwrap_or_else(|_| "5000".to_string());
+    let port = std::env::var("APP_PORT").unwrap_or_else(|_| "5000".to_string());
     let addr = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();

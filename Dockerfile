@@ -26,10 +26,10 @@ ARG APP_PORT
 ARG DATABASE_PUBLIC_URL
 
 RUN apt-get update \
-		&& apt-get install -y ca-certificates \
-		&& rm -rf /var/lib/apt/lists/*
+    && apt-get install -y ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY static /usr/local/bin/static
+COPY static /app/static
 COPY --from=builder /app/target/release/spyhole /usr/local/bin/spyhole
 
 ENV RUST_LOG=$RUST_LOG
