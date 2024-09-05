@@ -7,7 +7,6 @@ use axum::{
 use chrono::{NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
-use std::env;
 use tokio::time::{sleep, Duration};
 use tower::ServiceBuilder;
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -120,10 +119,6 @@ async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
     response_html.into_response()
 }
 
-async fn index() -> Html<&'static str> {
-    Html(include_str!("../static/index.html"))
-}
-
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
@@ -151,8 +146,7 @@ async fn main() {
     }
 
     let app = Router::new()
-        .route("/", get(index))
-        .nest_service("/assets", ServeDir::new("./static/assets"))
+        .nest_service("/", ServeDir::new("static"))
         .route("/monitor", post(monitor_service))
         .route("/monitored_urls", get(get_monitored_urls))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
