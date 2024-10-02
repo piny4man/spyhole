@@ -1,3 +1,4 @@
+use askama_axum::Template;
 use axum::{
     extract::State,
     response::IntoResponse,
@@ -25,6 +26,17 @@ struct MonitorResponse {
     webhook: String,
     last_checked: Option<NaiveDate>,
     status: Option<bool>,
+}
+#[derive(Serialize)]
+struct UrlItem {
+    url: String,
+    status: bool,
+}
+
+#[derive(Template)]
+#[template(path = "urls.html")]
+struct UrlsTemplate<'a> {
+    urls: &'a Vec<UrlItem>,
 }
 
 async fn start_monitoring(pool: PgPool, id: i32, url: String, webhook: String) {
@@ -107,16 +119,27 @@ async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
     .await
     .expect("Failed to fetch monitored URLs");
 
-    let mut response_html = String::new();
-    for url in monitored_urls {
-        response_html.push_str(&format!(
-            "<li class=\"monitored-url\"><a href=\"{0}\" target=\"_blank\" rel=\"noreferrer\">{0}</a><span class=\"status-badge up-{1}\"/></li>",
-            url.url,
-            url.status.unwrap_or(false)
-        ));
-    }
+    // let mut response_html = Vec::new();
+    // for url in monitored_urls {
+    //     response_html.push(url  &format!(
+    //         "<li class=\"monitored-url\"><a href=\"{0}\" target=\"_blank\" rel=\"noreferrer\">{0}</a><span class=\"status-badge up-{1}\"/></li>",
+    //         url.url,
+    //         url.status.unwrap_or(false)
+    //     ));
+    // }
+    //
+    let response_urls: Vec<UrlItem> = monitored_urls
+        .iter()
+        .map(|url| UrlItem {
+            url: url.url.clone(),
+            status: url.status.unwrap_or(false),
+        })
+        .collect();
 
-    response_html.into_response()
+    let response_html = UrlsTemplate {
+        urls: &response_urls,
+    };
+    response_html.render().unwrap()
 }
 
 #[tokio::main]
