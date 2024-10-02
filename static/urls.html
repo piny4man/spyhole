@@ -1,0 +1,20 @@
+{ % extends "index.html" % } { % block content % }
+
+<article>
+    <ul
+        id="list-container"
+        hx-get="/monitored_urls"
+        hx-trigger="load"
+        hx-swap="innerHTML"
+    >
+        {% block urls %} {% for url in urls %}
+        <li class="monitored-url">
+            <a href="{{url.url}}" target="_blank" rel="noreferrer"
+                >{{url.url}}</a
+            ><span class="status-badge up-{{ url.status }}" />
+        </li>
+        {% endfor %} {% endblock %}
+    </ul>
+</article>
+
+{ % endblock % }
