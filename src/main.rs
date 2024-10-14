@@ -34,6 +34,10 @@ struct UrlItem {
 }
 
 #[derive(Template)]
+#[template(path = "index.html")]
+struct IndexTemplate;
+
+#[derive(Template)]
 #[template(path = "urls.html")]
 struct UrlsTemplate<'a> {
     urls: &'a Vec<UrlItem>,
@@ -119,15 +123,6 @@ async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
     .await
     .expect("Failed to fetch monitored URLs");
 
-    // let mut response_html = Vec::new();
-    // for url in monitored_urls {
-    //     response_html.push(url  &format!(
-    //         "<li class=\"monitored-url\"><a href=\"{0}\" target=\"_blank\" rel=\"noreferrer\">{0}</a><span class=\"status-badge up-{1}\"/></li>",
-    //         url.url,
-    //         url.status.unwrap_or(false)
-    //     ));
-    // }
-    //
     let response_urls: Vec<UrlItem> = monitored_urls
         .iter()
         .map(|url| UrlItem {
@@ -136,10 +131,14 @@ async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
         })
         .collect();
 
-    let response_html = UrlsTemplate {
+    let template = UrlsTemplate {
         urls: &response_urls,
     };
-    response_html.render().unwrap()
+    askama_axum::IntoResponse::into_response(template)
+}
+
+async fn index() -> impl IntoResponse {
+    IndexTemplate.into_response()
 }
 
 #[tokio::main]
@@ -169,7 +168,8 @@ async fn main() {
     }
 
     let app = Router::new()
-        .nest_service("/", ServeDir::new("static"))
+        .route("/", get(index))
+        .nest_service("/assets", ServeDir::new("static/assets"))
         .route("/monitor", post(monitor_service))
         .route("/monitored_urls", get(get_monitored_urls))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))

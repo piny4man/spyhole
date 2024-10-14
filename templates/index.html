@@ -6,8 +6,8 @@
         <title>Spyhole</title>
         <script src="https://unpkg.com/htmx.org@2.0.2"></script>
         <link rel="stylesheet" href="/assets/styles.css" />
+        {% block head %}{% endblock %}
     </head>
-
     <body>
         <main>
             <header>
@@ -36,9 +36,11 @@
                     </svg>
                 </button>
             </header>
-            {% block content %}
-            <p>Loading monitored urls...</p>
-            {% endblock %}
+            <article>
+              <ul id="list-container" hx-get="/monitored_urls" hx-trigger="load" hx-swap="innerHTML">
+                  <li class="loading">Loading monitored URLs...</li>
+              </ul>
+          </article>
         </main>
     </body>
 </html>
