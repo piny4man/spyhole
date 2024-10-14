@@ -1,14 +1,25 @@
 :root {
-  --primary-color: #433D8B;
-  --secondary-color: #2E236C;
-  --tertiary-color: #17153B;
-  --accent-color: #C8ACD6;
-  --green: #6BFF54;
-  --red: #FF3232;
+  --primary-color: #433d8b;
+  --secondary-color: #2e236c;
+  --tertiary-color: #17153b;
+  --accent-color: #c8acd6;
+  --green: #6bff54;
+  --red: #ff3232;
 }
 
 html {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Open Sans",
+    "Helvetica Neue",
+    sans-serif;
 }
 
 body {
@@ -73,23 +84,20 @@ main #refresh-button {
     transform: rotate(0deg);
   }
 
-
   100% {
     transform: rotate(360deg);
   }
 
-
   0% {
     transform: rotate(0deg);
   }
-
 
   100% {
     transform: rotate(360deg);
   }
 }
 
-.spinning {
+main #refresh-button:hover .spinning {
   animation: spin 1s linear infinite;
 }
 
@@ -134,6 +142,7 @@ main .monitored-url .status-badge {
   width: 8px;
   height: 8px;
   border-radius: 4px;
+  position: relative;
 }
 
 main .monitored-url .status-badge.up-true {

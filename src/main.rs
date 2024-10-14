@@ -1,3 +1,4 @@
+use askama_axum::Template;
 use axum::{
     extract::State,
     response::IntoResponse,
@@ -25,6 +26,21 @@ struct MonitorResponse {
     webhook: String,
     last_checked: Option<NaiveDate>,
     status: Option<bool>,
+}
+#[derive(Serialize)]
+struct UrlItem {
+    url: String,
+    status: bool,
+}
+
+#[derive(Template)]
+#[template(path = "index.html")]
+struct IndexTemplate;
+
+#[derive(Template)]
+#[template(path = "urls.html")]
+struct UrlsTemplate<'a> {
+    urls: &'a Vec<UrlItem>,
 }
 
 async fn start_monitoring(pool: PgPool, id: i32, url: String, webhook: String) {
@@ -107,16 +123,22 @@ async fn get_monitored_urls(State(pool): State<PgPool>) -> impl IntoResponse {
     .await
     .expect("Failed to fetch monitored URLs");
 
-    let mut response_html = String::new();
-    for url in monitored_urls {
-        response_html.push_str(&format!(
-            "<li class=\"monitored-url\"><a href=\"{0}\" target=\"_blank\" rel=\"noreferrer\">{0}</a><span class=\"status-badge up-{1}\"/></li>",
-            url.url,
-            url.status.unwrap_or(false)
-        ));
-    }
+    let response_urls: Vec<UrlItem> = monitored_urls
+        .iter()
+        .map(|url| UrlItem {
+            url: url.url.clone(),
+            status: url.status.unwrap_or(false),
+        })
+        .collect();
 
-    response_html.into_response()
+    let template = UrlsTemplate {
+        urls: &response_urls,
+    };
+    askama_axum::IntoResponse::into_response(template)
+}
+
+async fn index() -> impl IntoResponse {
+    IndexTemplate.into_response()
 }
 
 #[tokio::main]
@@ -146,7 +168,8 @@ async fn main() {
     }
 
     let app = Router::new()
-        .nest_service("/", ServeDir::new("static"))
+        .route("/", get(index))
+        .nest_service("/assets", ServeDir::new("static/assets"))
         .route("/monitor", post(monitor_service))
         .route("/monitored_urls", get(get_monitored_urls))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))

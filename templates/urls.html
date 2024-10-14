@@ -1,0 +1,6 @@
+{% for url in urls %}
+<li class="monitored-url">
+    <a href="{{ url.url }}" target="_blank" rel="noreferrer">{{ url.url }}</a>
+    <span class="status-badge up-{{ url.status }}"></span>
+</li>
+{% endfor %}
