@@ -1,154 +1,154 @@
 :root {
-    --primary-color: #433d8b;
-    --secondary-color: #2e236c;
-    --tertiary-color: #17153b;
-    --accent-color: #c8acd6;
-    --green: #6bff54;
-    --red: #ff3232;
+  --primary-color: #433d8b;
+  --secondary-color: #2e236c;
+  --tertiary-color: #17153b;
+  --accent-color: #c8acd6;
+  --green: #6bff54;
+  --red: #ff3232;
 }
 
 html {
-    font-family:
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Oxygen,
-        Ubuntu,
-        Cantarell,
-        "Open Sans",
-        "Helvetica Neue",
-        sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Open Sans",
+    "Helvetica Neue",
+    sans-serif;
 }
 
 body {
-    min-height: 100dvh;
-    min-width: 100dvw;
-    background-color: var(--secondary-color);
-    color: var(--accent-color);
-    margin: 0;
-    padding: 0;
+  min-height: 100dvh;
+  min-width: 100dvw;
+  background-color: var(--secondary-color);
+  color: var(--accent-color);
+  margin: 0;
+  padding: 0;
 }
 
 main {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
-    padding: 20px;
-    box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 /* Header */
-main > header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin: 20px;
+main>header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px;
 }
 
-main > header > section {
-    height: 80px;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--tertiary-color);
-    border-radius: 10px;
-    padding: 12px;
+main>header>section {
+  height: 80px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--tertiary-color);
+  border-radius: 10px;
+  padding: 12px;
 }
 
 main #refresh-button {
-    border: none;
-    background-color: var(--primary-color);
-    color: var(--tertiary-color);
-    width: 40px;
-    height: 40px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border-radius: 4px;
-    border-top-left-radius: 0px;
-    border-bottom-left-radius: 0px;
+  border: none;
+  background-color: var(--primary-color);
+  color: var(--tertiary-color);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
 }
 
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
+  0% {
+    transform: rotate(0deg);
+  }
 
-    100% {
-        transform: rotate(360deg);
-    }
+  100% {
+    transform: rotate(360deg);
+  }
 
-    0% {
-        transform: rotate(0deg);
-    }
+  0% {
+    transform: rotate(0deg);
+  }
 
-    100% {
-        transform: rotate(360deg);
-    }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 main #refresh-button:hover .spinning {
-    animation: spin 1s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
-main > header > section > h1 {
-    margin: 0;
+main>header>section>h1 {
+  margin: 0;
 }
 
 /* Monitored urls */
-main > article {
-    flex: 1;
+main>article {
+  flex: 1;
 }
 
-main > article > ul {
-    list-style: none;
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: flex-start;
-    gap: 10px;
+main>article>ul {
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 main .monitored-url {
-    background-color: var(--tertiary-color);
-    color: var(--accent-color);
-    padding: 8px;
-    border-radius: 4px;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
+  background-color: var(--tertiary-color);
+  color: var(--accent-color);
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 
 main .monitored-url a,
 main .monitored-url a:visited,
 main .monitored-url a:active {
-    color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 main .monitored-url .status-badge {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 4px;
-    position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  position: relative;
 }
 
 main .monitored-url .status-badge.up-true {
-    background-color: var(--green);
+  background-color: var(--green);
 }
 
 main .monitored-url .status-badge.up-false {
-    background-color: var(--red);
+  background-color: var(--red);
 }
