@@ -5,7 +5,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use chrono::{NaiveDate, Utc};
+use chrono::{NaiveDate, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use tokio::time::{sleep, Duration};
@@ -13,10 +13,27 @@ use tower::ServiceBuilder;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::{info, Level};
 
+#[derive(Debug, Serialize, Deserialize)]
+enum ServiceStatus {
+    Healthy,
+    Degraded(String), // Include reason (e.g., "High latency", "500 Error")
+    Down(String),     // Include reason (e.g., "Connection refused", "Timeout")
+}
+
+#[derive(Debug, Serialize)]
+struct HealthCheck {
+    timestamp: NaiveDateTime,
+    status: ServiceStatus,
+    response_time_ms: Option<u64>,
+    status_code: Option<u16>,
+}
+
 #[derive(Deserialize)]
 struct MonitorRequest {
     url: String,
     webhook: String,
+    timeout_ms: Option<u64>,      // Optional timeout configuration
+    expected_status: Option<u16>, // Expected HTTP status code
 }
 
 #[derive(Serialize)]
@@ -24,18 +41,23 @@ struct MonitorResponse {
     id: i32,
     url: String,
     webhook: String,
-    last_checked: Option<NaiveDate>,
-    status: Option<bool>,
-}
-#[derive(Serialize)]
-struct UrlItem {
-    url: String,
-    status: bool,
+    last_checked: Option<NaiveDateTime>,
+    status: Option<ServiceStatus>,
+    last_health_check: Option<HealthCheck>,
 }
 
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate;
+
+#[derive(Serialize)]
+struct UrlItem {
+    url: String,
+    status: ServiceStatus,
+    last_checked: Option<NaiveDateTime>,
+    response_time_ms: Option<u64>,
+    status_code: Option<u16>,
+}
 
 #[derive(Template)]
 #[template(path = "urls.html")]
